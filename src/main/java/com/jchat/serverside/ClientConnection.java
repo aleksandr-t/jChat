@@ -1,21 +1,21 @@
 package com.jchat.serverside;
 
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
 
 class ClientConnection extends Observable implements Runnable {
 
-    private final jChatServer _server;
     final Socket _socket;
-    ObjectOutputStream _out;
-    ObjectInputStream _in;
-    private String _nickName;
     final Thread thread;
+    private final jChatServer _server;
+    DataOutputStream _out;
+    DataInputStream _in;
+    private String _nickName;
 
     public ClientConnection(final jChatServer myServer, final Socket socket) {
         this._server = myServer;
@@ -27,14 +27,8 @@ class ClientConnection extends Observable implements Runnable {
         return this._nickName;
     }
 
-    int setNickName(final String nickName) {
-        if (nickName == null || nickName.isEmpty())
-            return 1;
-        else if (this._server.existsNickName(nickName))
-            return 2;
+    void setNickName(final String nickName) {
         this._nickName = nickName;
-
-        return 0;
     }
 
     @Override
@@ -43,7 +37,7 @@ class ClientConnection extends Observable implements Runnable {
         try {
             String message;
             while (true) {
-                message = (String) this._in.readObject();
+                message = this._in.readUTF();
                 this._server.sendMessageToAll(this._nickName, message);
             }
         } catch (SocketException | EOFException se) {
@@ -52,10 +46,6 @@ class ClientConnection extends Observable implements Runnable {
             e.printStackTrace();
         } finally {
             try {
-                if (this._out != null)
-                    this._out.close();
-                if (this._in != null)
-                    this._in.close();
                 this._server.clientConnections.remove(this);
                 this._server.sendMessageToAll(String.format("%s is offline", this._nickName));
             } catch (Exception e) {
@@ -70,16 +60,19 @@ class ClientConnection extends Observable implements Runnable {
             throw new NullPointerException("OUT is null!\n");
         if (message == null || message.isEmpty())
             return;
-        this._out.writeObject(message);
+        this._out.writeUTF(message);
     }
 
     public void stopConnection() {
         try {
-            if (this._socket != null) {
-                if (!this._socket.isClosed())
-                    this._socket.close();
-            }
+            if (this._out != null)
+                this._out.close();
+            if (this._in != null)
+                this._in.close();
+            if (this._socket != null)
+                this._socket.close();
         } catch (Exception e) {
+            System.out.println(e.getMessage());
             e.printStackTrace();
         }
     }

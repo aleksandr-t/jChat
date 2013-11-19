@@ -42,17 +42,18 @@ public class jChatServer implements jChatServerAble, Observer {
     void disconnectClient(final ClientConnection clientConnection) throws Exception {
 
         clientConnection.sendMessage(ConstantVariables.KICK);
-        clientConnection.stopConnection();
-        clientConnection.thread.join();
+        clientConnection.thread.join(10000);
+        if (clientConnection.thread.isAlive())
+            clientConnection.stopConnection();
     }
 
     @Override
     public void disconnectAll() throws Exception {
         int size = this.clientConnections.size();
-        this.sendMessageToAll(ConstantVariables.KICK_ALL);
-        for (int i = 0; i < size; i++) {
-            this.clientConnections.get(0).stopConnection();
-        }
+        if (size == 0)
+            return;
+        for (int i = 0; i < size; i++)
+            this.disconnectClient(this.clientConnections.get(0));
     }
 
     @Override
@@ -62,9 +63,8 @@ public class jChatServer implements jChatServerAble, Observer {
 
     @Override
     public void sendMessageToAll(final String message) throws Exception {
-        for (ClientConnection c : this.clientConnections) {
-            this.sendMessageToClient(c, message);
-        }
+        for (ClientConnection c : this.clientConnections)
+            c.sendMessage(message);
     }
 
     void sendMessageToClient(ClientConnection clientConnection, final String message) throws Exception {

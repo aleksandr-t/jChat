@@ -2,8 +2,8 @@ package com.jchat.serverside;
 
 import com.jchat.ConstantVariables;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -45,16 +45,27 @@ class ConnectionsListener extends Observable implements Runnable {
 
     }
 
+    int validateNickName(final String nickName) {
+        if (nickName == null || nickName.isEmpty())
+            return 1;
+        else if (this._server.existsNickName(nickName))
+            return 2;
+        return 0;
+    }
+
     private boolean validateNickName(ClientConnection clientConnection) throws Exception {
-        clientConnection._in = new ObjectInputStream(clientConnection._socket.getInputStream());
-        String message = (String) clientConnection._in.readObject();
-        int res = clientConnection.setNickName(message);
-        clientConnection._out = new ObjectOutputStream(clientConnection._socket.getOutputStream());
-        String nick = clientConnection.getNickName();
+
+        clientConnection._in = new DataInputStream(clientConnection._socket.getInputStream());
+        clientConnection._out = new DataOutputStream(clientConnection._socket.getOutputStream());
+
+
+        String message = clientConnection._in.readUTF();
+        int res = validateNickName(message);
         switch (res) {
             case 0:
-                this._server.sendMessageToAll(String.format("%s is online!", nick));
-                clientConnection.sendMessage(String.format("Welcome to jChat, %s!", nick));
+                this._server.sendMessageToAll(String.format("%s is online!", message));
+                clientConnection.setNickName(message);
+                clientConnection.sendMessage(String.format("Welcome to jChat, %s!", message));
                 return true;
             case 2:
                 clientConnection.sendMessage(ConstantVariables.THIS_NICK_IS_ALREADY_USED);

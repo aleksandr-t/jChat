@@ -2,45 +2,49 @@ package com.jchat.clientside;
 
 import com.jchat.ConstantVariables;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.EOFException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
 
 class ServerConnection extends Observable implements Runnable {
 
-    private Socket _socket;
-    private ObjectOutputStream _out;
-    private boolean _isActive;
     private final jChatClient _client;
+    public boolean isActive;
+    private Socket _socket;
+    private DataOutputStream _out;
 
     public ServerConnection(final jChatClient myClient) {
         this._client = myClient;
+        this.isActive = false;
         new Thread(this).start();
     }
 
     @Override
     public void run() {
 
-        ObjectInputStream ois = null;
-        try (Socket socket = new Socket(ConstantVariables.HOST, ConstantVariables.SERVER_PORT)) {
-            this._isActive = true;
+        try (Socket socket = new Socket(ConstantVariables.HOST, ConstantVariables.SERVER_PORT);
+             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream())) {
+
+            this.isActive = true;
             this._socket = socket;
-            String message;
-            this._out = new ObjectOutputStream(this._socket.getOutputStream());
+            this._out = dataOutputStream;
+
+
             sendMessage(this._client.getNickName());
-            ois = new ObjectInputStream(socket.getInputStream());
-            while (this._isActive) {
-                message = (String) ois.readObject();
+            String message;
+            while (this.isActive) {
+                message = dataInputStream.readUTF();
                 setChanged();
                 switch (message) {
                     case ConstantVariables.THIS_NICK_IS_ALREADY_USED:
                     case ConstantVariables.INCORRECT_NICK:
                     case ConstantVariables.KICK_ALL:
                     case ConstantVariables.KICK:
-                        this._isActive = false;
+                        this.isActive = false;
                         notifyObservers(String.format("Connection was aborted by server. Reason: %s", message));
                         break;
                     default:
@@ -55,24 +59,16 @@ class ServerConnection extends Observable implements Runnable {
         } finally {
             setChanged();
             notifyObservers("Server connection was loss");
-            try {
-                if (ois != null)
-                    ois.close();
-                if (this._out != null)
-                    this._out.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 
     public void stopConnection() {
         try {
-            this._isActive = false;
-            if (this._socket != null) {
-                if (!this._socket.isClosed()) {
-                    this._socket.close();
-                }
+            this.isActive = false;
+            if (this._socket != null && !this._socket.isClosed()) {
+                this._socket.shutdownOutput();
+                this._socket.shutdownInput();
+                this._socket.close();
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,11 +76,12 @@ class ServerConnection extends Observable implements Runnable {
     }
 
     public void sendMessage(String message) throws Exception {
-        if (this._out == null)
+
+        if (!this.isActive || this._out == null)
             throw new Exception("out is null");
         if (message == null || message.isEmpty())
             return;
-        this._out.writeObject(message);
+        this._out.writeUTF(message);
     }
 
 }
