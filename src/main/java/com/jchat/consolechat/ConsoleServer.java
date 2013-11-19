@@ -12,7 +12,7 @@ public class ConsoleServer {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
             jChatServer server = new jChatServer();
-            String key, value;
+            String key;
             do {
                 key = reader.readLine();
                 switch (key) {

@@ -11,15 +11,14 @@ import java.util.Observable;
 
 class ConnectionsListener extends Observable implements Runnable {
 
-    Thread thread;
     private ServerSocket _serverSocket;
     private final jChatServer _server;
 
     ConnectionsListener(final jChatServer server) {
 
         this._server = server;
-        this.thread = new Thread(this);
-        this.thread.start();
+        Thread thread = new Thread(this);
+        thread.start();
     }
 
     @Override

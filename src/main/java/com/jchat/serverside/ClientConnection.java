@@ -11,11 +11,11 @@ import java.util.Observable;
 class ClientConnection extends Observable implements Runnable {
 
     private final jChatServer _server;
-    protected final Socket _socket;
-    protected ObjectOutputStream _out;
-    protected ObjectInputStream _in;
+    final Socket _socket;
+    ObjectOutputStream _out;
+    ObjectInputStream _in;
     private String _nickName;
-    Thread thread;
+    final Thread thread;
 
     public ClientConnection(final jChatServer myServer, final Socket socket) {
         this._server = myServer;
@@ -27,7 +27,7 @@ class ClientConnection extends Observable implements Runnable {
         return this._nickName;
     }
 
-    protected int setNickName(final String nickName) {
+    int setNickName(final String nickName) {
         if (nickName == null || nickName.isEmpty())
             return 1;
         else if (this._server.existsNickName(nickName))
@@ -46,9 +46,7 @@ class ClientConnection extends Observable implements Runnable {
                 message = (String) this._in.readObject();
                 this._server.sendMessageToAll(this._nickName, message);
             }
-        } catch (SocketException se) {
-
-        } catch (EOFException ee) {
+        } catch (SocketException | EOFException se) {
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -59,7 +57,7 @@ class ClientConnection extends Observable implements Runnable {
                 if (this._in != null)
                     this._in.close();
                 this._server.clientConnections.remove(this);
-                this._server.sendMessageToAll(String.format("%s is ofline", this._nickName));
+                this._server.sendMessageToAll(String.format("%s is offline", this._nickName));
             } catch (Exception e) {
                 e.printStackTrace();
             }

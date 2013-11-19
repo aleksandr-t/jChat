@@ -3,7 +3,6 @@ package com.jchat.clientside;
 import com.jchat.ConstantVariables;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
@@ -12,16 +11,14 @@ import java.util.Observable;
 
 class ServerConnection extends Observable implements Runnable {
 
-    private final Thread _thread;
     private Socket _socket;
     private ObjectOutputStream _out;
     private boolean _isActive;
-    private jChatClient _client;
+    private final jChatClient _client;
 
-    public ServerConnection(final jChatClient myClient) throws IOException {
+    public ServerConnection(final jChatClient myClient) {
         this._client = myClient;
-        this._thread = new Thread(this);
-        this._thread.start();
+        new Thread(this).start();
     }
 
     @Override
@@ -51,9 +48,7 @@ class ServerConnection extends Observable implements Runnable {
                         break;
                 }
             }
-        } catch (SocketException se) {
-
-        } catch (EOFException ee) {
+        } catch (SocketException | EOFException se) {
 
         } catch (Exception e) {
             e.printStackTrace();

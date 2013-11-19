@@ -9,10 +9,10 @@ import java.util.Observer;
 
 public class jChatServer implements jChatServerAble, Observer {
 
-    protected List<ClientConnection> clientConnections;
-    protected ConnectionsListener connectionsListener;
+    final List<ClientConnection> clientConnections;
+    private ConnectionsListener connectionsListener;
 
-    public jChatServer() throws Exception {
+    public jChatServer() {
         this.clientConnections = new LinkedList<>();
     }
 
@@ -39,7 +39,7 @@ public class jChatServer implements jChatServerAble, Observer {
         this.disconnectClient(this.clientConnections.get(idClient - 1));
     }
 
-    protected void disconnectClient(final ClientConnection clientConnection) throws Exception {
+    void disconnectClient(final ClientConnection clientConnection) throws Exception {
 
         clientConnection.sendMessage(ConstantVariables.KICK);
         clientConnection.stopConnection();
@@ -67,11 +67,11 @@ public class jChatServer implements jChatServerAble, Observer {
         }
     }
 
-    protected void sendMessageToClient(ClientConnection clientConnection, final String message) throws Exception {
+    void sendMessageToClient(ClientConnection clientConnection, final String message) throws Exception {
         clientConnection.sendMessage(message);
     }
 
-    protected void sendMessageToAll(final String From, final String message) throws Exception {
+    void sendMessageToAll(final String From, final String message) throws Exception {
         for (ClientConnection c : this.clientConnections) {
             if (!From.equals(c.getNickName()))
                 this.sendMessageToClient(c, String.format("%s >> %s", From, message));

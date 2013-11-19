@@ -1,9 +1,9 @@
 package com.jchat.clientside;
 
 interface jChatClientAble {
-    public void connect() throws Exception;
+    public void connect();
 
-    public void disconnect() throws Exception;
+    public void disconnect();
 
     public void sendMessageToAll(String message) throws Exception;
 

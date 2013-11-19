@@ -7,7 +7,7 @@ public class jChatClient implements jChatClientAble, Observer {
 
 
     private ServerConnection _serverConnection;
-    private String _nickName;
+    private final String _nickName;
 
     public String getNickName() {
         return this._nickName;
@@ -18,13 +18,13 @@ public class jChatClient implements jChatClientAble, Observer {
     }
 
     @Override
-    public void connect() throws Exception {
+    public void connect() {
         this._serverConnection = new ServerConnection(this);
         this._serverConnection.addObserver(this);
     }
 
     @Override
-    public void disconnect() throws Exception {
+    public void disconnect() {
         this._serverConnection.stopConnection();
     }
 

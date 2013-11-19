@@ -5,7 +5,7 @@ import java.util.List;
 interface jChatServerAble {
     public void startServer();
 
-    public void stopServer() throws InterruptedException, Exception;
+    public void stopServer() throws Exception;
 
     public void disconnectClient(int idClient) throws Exception;
 
