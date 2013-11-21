@@ -1,6 +1,6 @@
 package com.jchat.consolechat;
 
-import com.jchat.clientside.jChatClient;
+import com.jchat.clientside.jClient;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +11,7 @@ public class ConsoleClient {
     public static void main(String[] args) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
             System.out.print("Your nick: ");
-            jChatClient client = new jChatClient(reader.readLine());
+            jClient client = new jClient(reader.readLine());
             String key;
             do {
                 key = reader.readLine();

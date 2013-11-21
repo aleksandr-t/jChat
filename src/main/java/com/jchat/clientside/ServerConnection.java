@@ -1,22 +1,24 @@
 package com.jchat.clientside;
 
 import com.jchat.ConstantVariables;
+import com.jchat.jMessage;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
 
+
 class ServerConnection extends Observable implements Runnable {
 
-    private final jChatClient _client;
+    private final jClient _client;
     public boolean isActive;
     private Socket _socket;
-    private DataOutputStream _out;
+    private ObjectOutputStream _out;
 
-    public ServerConnection(final jChatClient myClient) {
+    public ServerConnection(final jClient myClient) {
         this._client = myClient;
         this.isActive = false;
         new Thread(this).start();
@@ -26,29 +28,30 @@ class ServerConnection extends Observable implements Runnable {
     public void run() {
 
         try (Socket socket = new Socket(ConstantVariables.HOST, ConstantVariables.SERVER_PORT);
-             DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
-             DataInputStream dataInputStream = new DataInputStream(socket.getInputStream())) {
+             ObjectOutputStream objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+             ObjectInputStream objectInputStream = new ObjectInputStream(socket.getInputStream())) {
 
             this.isActive = true;
             this._socket = socket;
-            this._out = dataOutputStream;
+            this._out = objectOutputStream;
 
 
-            sendMessage(this._client.getNickName());
-            String message;
+            sendMsg(new jMessage(ConstantVariables.jMsgFlag.CONNECT, this._client.getNickName()));
+            jMessage msg;
             while (this.isActive) {
-                message = dataInputStream.readUTF();
+                msg = (jMessage) objectInputStream.readObject();
+                msg.check();
                 setChanged();
-                switch (message) {
-                    case ConstantVariables.THIS_NICK_IS_ALREADY_USED:
-                    case ConstantVariables.INCORRECT_NICK:
-                    case ConstantVariables.KICK_ALL:
-                    case ConstantVariables.KICK:
+                switch (msg.getMessage()) {
+                    case DISCONNECT:
                         this.isActive = false;
-                        notifyObservers(String.format("Connection was aborted by server. Reason: %s", message));
+                        notifyObservers(String.format("Connection was aborted by server. Reason: %s", msg));
+                        break;
+                    case CORRUPTED:
+                        notifyObservers("Message from server was corrupted while getting");
                         break;
                     default:
-                        notifyObservers(message);
+                        notifyObservers(msg);
                         break;
                 }
             }
@@ -64,6 +67,7 @@ class ServerConnection extends Observable implements Runnable {
 
     public void stopConnection() {
         try {
+            this.sendMsg(new jMessage(null));
             this.isActive = false;
             if (this._socket != null && !this._socket.isClosed()) {
                 this._socket.shutdownOutput();
@@ -75,13 +79,17 @@ class ServerConnection extends Observable implements Runnable {
         }
     }
 
-    public void sendMessage(String message) throws Exception {
+    public void sendMsg(final jMessage msg) throws Exception {
 
-        if (!this.isActive || this._out == null)
-            throw new Exception("out is null");
-        if (message == null || message.isEmpty())
-            return;
-        this._out.writeUTF(message);
+        if (!this.isActive || this._out == null || msg == null) {
+            setChanged();
+            notifyObservers("Unavailable to send");
+        }
+
+        this._out.writeObject(msg);
     }
 
+    public void sendMsg(final String msg) throws Exception {
+        this.sendMsg(new jMessage(ConstantVariables.jMsgFlag.MESSAGE, msg));
+    }
 }

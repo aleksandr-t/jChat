@@ -3,7 +3,7 @@ package com.jchat.clientside;
 import java.util.Observable;
 import java.util.Observer;
 
-public class jChatClient implements jChatClientAble, Observer {
+public class jClient implements Observer {
 
 
     private ServerConnection _serverConnection;
@@ -13,23 +13,21 @@ public class jChatClient implements jChatClientAble, Observer {
         return this._nickName;
     }
 
-    public jChatClient(final String nickName) {
+    public jClient(final String nickName) {
         this._nickName = nickName;
     }
 
-    @Override
     public void connect() {
         this._serverConnection = new ServerConnection(this);
         this._serverConnection.addObserver(this);
     }
 
-    @Override
     public void disconnect() {
         this._serverConnection.stopConnection();
     }
 
     public void sendMessageToAll(String message) throws Exception {
-        this._serverConnection.sendMessage(message);
+        this._serverConnection.sendMsg(message);
     }
 
     @Override

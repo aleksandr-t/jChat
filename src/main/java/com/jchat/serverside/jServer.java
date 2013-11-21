@@ -1,29 +1,28 @@
 package com.jchat.serverside;
 
 import com.jchat.ConstantVariables;
+import com.jchat.jMessage;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 
-public class jChatServer implements jChatServerAble, Observer {
+public class jServer implements Observer {
 
     final List<ClientConnection> clientConnections;
     private ConnectionsListener connectionsListener;
 
-    public jChatServer() {
+    public jServer() {
         this.clientConnections = new LinkedList<>();
     }
 
-
-    @Override
     public void startServer() {
         this.connectionsListener = new ConnectionsListener(this);
         this.connectionsListener.addObserver(this);
     }
 
-    @Override
+
     public void stopServer() throws Exception {
         ConnectionsListener cl = this.connectionsListener;
 
@@ -33,7 +32,6 @@ public class jChatServer implements jChatServerAble, Observer {
         cl.stopListener();
     }
 
-    @Override
     public void disconnectClient(int idClient) throws Exception {
 
         this.disconnectClient(this.clientConnections.get(idClient - 1));
@@ -41,13 +39,12 @@ public class jChatServer implements jChatServerAble, Observer {
 
     void disconnectClient(final ClientConnection clientConnection) throws Exception {
 
-        clientConnection.sendMessage(ConstantVariables.KICK);
+        clientConnection.sendMessage(new jMessage(ConstantVariables.jMsgFlag.DISCONNECT, "Disconnect"));
         clientConnection.thread.join(10000);
         if (clientConnection.thread.isAlive())
             clientConnection.stopConnection();
     }
 
-    @Override
     public void disconnectAll() throws Exception {
         int size = this.clientConnections.size();
         if (size == 0)
@@ -56,29 +53,26 @@ public class jChatServer implements jChatServerAble, Observer {
             this.disconnectClient(this.clientConnections.get(0));
     }
 
-    @Override
-    public void sendMessageToClient(int idClient, final String message) throws Exception {
-        this.clientConnections.get(idClient - 1).sendMessage(message);
+    public void sendMessageToClient(int idClient, final jMessage msg) throws Exception {
+        this.clientConnections.get(idClient - 1).sendMessage(msg);
     }
 
-    @Override
-    public void sendMessageToAll(final String message) throws Exception {
+    public void sendMessageToAll(final jMessage msg) throws Exception {
         for (ClientConnection c : this.clientConnections)
-            c.sendMessage(message);
+            c.sendMessage(msg);
     }
 
-    void sendMessageToClient(ClientConnection clientConnection, final String message) throws Exception {
-        clientConnection.sendMessage(message);
+    void sendMessageToClient(ClientConnection clientConnection, final jMessage msg) throws Exception {
+        clientConnection.sendMessage(msg);
     }
 
     void sendMessageToAll(final String From, final String message) throws Exception {
         for (ClientConnection c : this.clientConnections) {
             if (!From.equals(c.getNickName()))
-                this.sendMessageToClient(c, String.format("%s >> %s", From, message));
+                this.sendMessageToClient(c, new jMessage(ConstantVariables.jMsgFlag.MESSAGE, String.format("%s >> %s", From, message)));
         }
     }
 
-    @Override
     public boolean existsNickName(String nickName) {
         for (ClientConnection c : this.clientConnections) {
             if (nickName.equals(c.getNickName()))
@@ -87,12 +81,10 @@ public class jChatServer implements jChatServerAble, Observer {
         return false;
     }
 
-    @Override
     public int getTotalConnections() {
         return this.clientConnections.size();
     }
 
-    @Override
     public LinkedList<String> getConnectedClients() {
         LinkedList<String> lst = new LinkedList<>();
 

@@ -1,6 +1,8 @@
 package com.jchat.consolechat;
 
-import com.jchat.serverside.jChatServer;
+import com.jchat.ConstantVariables;
+import com.jchat.jMessage;
+import com.jchat.serverside.jServer;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -11,7 +13,7 @@ public class ConsoleServer {
     public static void main(String[] args) {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
-            jChatServer server = new jChatServer();
+            jServer server = new jServer();
             String key;
             do {
                 key = reader.readLine();
@@ -23,10 +25,10 @@ public class ConsoleServer {
                         server.stopServer();
                         break;
                     case "sendClient":
-                        server.sendMessageToClient(Integer.parseInt(reader.readLine()), reader.readLine());
+                        server.sendMessageToClient(Integer.parseInt(reader.readLine()), new jMessage(ConstantVariables.jMsgFlag.INFO, reader.readLine()));
                         break;
                     case "sendAll":
-                        server.sendMessageToAll(reader.readLine());
+                        server.sendMessageToAll(new jMessage(ConstantVariables.jMsgFlag.INFO, reader.readLine()));
                         break;
                     case "count":
                         System.out.printf("Total connections: %d\n", server.getTotalConnections());
