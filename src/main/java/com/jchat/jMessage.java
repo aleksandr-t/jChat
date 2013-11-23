@@ -2,13 +2,6 @@ package com.jchat;
 
 import java.io.Serializable;
 
-/**
- * Created with IntelliJ IDEA.
- * User: Администратор
- * Date: 20.11.13
- * Time: 12:04
- * To change this template use File | Settings | File Templates.
- */
 public class jMessage implements Serializable {
 
     private ConstantVariables.jMsgFlag _flag;

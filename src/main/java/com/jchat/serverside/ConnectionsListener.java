@@ -32,10 +32,10 @@ class ConnectionsListener extends Observable implements Runnable {
                 Socket socket = serverSocket.accept();
                 ClientConnection clientConnection = new ClientConnection(this._server, socket);
 
-                if (validateNickName(clientConnection)) {
+                if (validateConnection(clientConnection)) {
                     clientConnection.addObserver(this._server);
                     clientConnection.thread.start();
-                    this._server.clientConnections.add(clientConnection);
+                    this._server.addConnection(clientConnection);
                 }
             }
         } catch (SocketException se) {
@@ -54,7 +54,7 @@ class ConnectionsListener extends Observable implements Runnable {
         return 0;
     }
 
-    private boolean validateNickName(ClientConnection clientConnection) {
+    private boolean validateConnection(ClientConnection clientConnection) {
 
         try {
 

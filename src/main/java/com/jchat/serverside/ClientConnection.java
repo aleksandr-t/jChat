@@ -63,7 +63,7 @@ class ClientConnection extends Observable implements Runnable {
             e.printStackTrace();
         } finally {
             try {
-                this._server.clientConnections.remove(this);
+                this._server.removeConnection(this);
                 this._server.sendMessageToAll(new jMessage(ConstantVariables.jMsgFlag.INFO, String.format("%s is offline", this._nickName)));
             } catch (Exception e) {
                 e.printStackTrace();
@@ -77,6 +77,7 @@ class ClientConnection extends Observable implements Runnable {
         if (!this.isActive || this._out == null || msg == null) {
             setChanged();
             notifyObservers("Sending is unavailable");
+            return;
         }
 
         this._out.writeObject(msg);
