@@ -1,5 +1,6 @@
 package org.jchat;
 
+//TODO bad working notify server
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -72,9 +73,7 @@ class jClientConnection extends Observable implements Runnable {
     }
 
     private boolean isConnectMessage(Object connectMessage) {
-        if (!this.isMessage(connectMessage))
-            return false;
-        return ((jMessage) connectMessage).getTypeMessage() == jConstants.jMsgFlag.CONNECT;
+        return (this.isMessage(connectMessage) && ((jMessage) connectMessage).getTypeMessage() == jConstants.jMsgFlag.CONNECT);
     }
 
     private void checkingTypeMessage(Object message) {
