@@ -14,6 +14,8 @@ public class jClient extends Observable implements Observer {
         if (nickName == null)
             throw new IllegalArgumentException();
         this.nickName = nickName;
+        this.serverConnection = new jServerConnection(this.nickName);
+        this.serverConnection.addObserver(this);
     }
 
     public String getNickName() {
@@ -23,15 +25,12 @@ public class jClient extends Observable implements Observer {
     public boolean changeNickName(String nickName) {
         if (nickName == null || this.serverConnection.isActive())
             return false;
-
         this.nickName = nickName;
         return true;
     }
 
     public void connect() {
-        this.serverConnection = new jServerConnection(this.nickName);
-        new Thread(this.serverConnection).start();
-        this.serverConnection.addObserver(this);
+        this.serverConnection.initConnection();
     }
 
     public void disconnect() {

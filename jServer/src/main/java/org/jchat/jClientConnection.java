@@ -1,7 +1,5 @@
 package org.jchat;
 
-//TODO bad working notify server
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -42,7 +40,7 @@ class jClientConnection extends Observable implements Runnable {
     public void run() {
 
         this.active = true;
-        this.sendMsg(new jMessage(jConstants.jMsgFlag.CONNECT, String.format("Welcome to jChat, %s!", this.nickName)));
+        this.sendMsg(new jMessage(jMsgFlags.CONNECT, String.format("Welcome to jChat, %s!", this.nickName)));
         Object msg;
         try {
             while (this.active) {
@@ -55,8 +53,7 @@ class jClientConnection extends Observable implements Runnable {
             e.printStackTrace();
         } finally {
             this.closeOpenedObjects();
-            setChanged();
-            notifyObservers(new jMessage(jConstants.jMsgFlag.DISCONNECT));
+            notifyServer(new jMessage(jMsgFlags.DISCONNECT));
         }
     }
 
@@ -73,21 +70,20 @@ class jClientConnection extends Observable implements Runnable {
     }
 
     private boolean isConnectMessage(Object connectMessage) {
-        return (this.isMessage(connectMessage) && ((jMessage) connectMessage).getTypeMessage() == jConstants.jMsgFlag.CONNECT);
+        return (this.isMessage(connectMessage) && ((jMessage) connectMessage).getTypeMessage() == jMsgFlags.CONNECT);
     }
 
     private void checkingTypeMessage(Object message) {
         if (!this.isMessage(message))
             return;
         jMessage msg = (jMessage) message;
-        this.active = (msg.getTypeMessage() != jConstants.jMsgFlag.DISCONNECT);
-        setChanged();
-        notifyObservers(msg);
+        this.active = (msg.getTypeMessage() != jMsgFlags.DISCONNECT);
+        notifyServer(msg);
     }
 
     void stopConnection(String reason) {
         try {
-            this.sendMsg(new jMessage(jConstants.jMsgFlag.DISCONNECT, reason));
+            this.sendMsg(new jMessage(jMsgFlags.DISCONNECT, reason));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -131,5 +127,9 @@ class jClientConnection extends Observable implements Runnable {
         }
     }
 
+    private void notifyServer(Object object) {
+        setChanged();
+        notifyObservers(object);
+    }
 }
 

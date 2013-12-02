@@ -3,8 +3,6 @@ package org.jchat;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
-import java.util.Observable;
-import java.util.Observer;
 
 public class jServerConsole {
 
@@ -12,15 +10,16 @@ public class jServerConsole {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
             jServer server = new jServer();
+            server.addObserver(new ConsoleOutputNotifyServer());
             String key;
             do {
                 key = reader.readLine();
                 switch (key) {
                     case "start":
                         server.startServer();
-                        server.addObserver(new ConsoleOutputNotifyServer());
                         break;
-                    case "stopConnection":
+                    case "exit":
+                    case "stop":
                         server.stopServer();
                         break;
                     case "sendClient":
@@ -34,9 +33,6 @@ public class jServerConsole {
                         break;
                     case "disClient":
                         server.disconnectClient(Integer.parseInt(reader.readLine()));
-                        break;
-                    case "disAll":
-                        server.disconnectAll();
                         break;
                     case "online":
                         LinkedList<String> lst = server.getConnectedClients();

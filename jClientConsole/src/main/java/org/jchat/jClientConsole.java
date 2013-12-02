@@ -2,8 +2,6 @@ package org.jchat;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Observable;
-import java.util.Observer;
 
 public class jClientConsole {
 
@@ -12,14 +10,15 @@ public class jClientConsole {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
             System.out.print("Your nick: ");
             jClient client = new jClient(reader.readLine());
+            client.addObserver(new ConsoleOutputNotifyServer());
             String key;
             do {
                 key = reader.readLine();
                 switch (key) {
                     case "connect":
-                        client.addObserver(new ConsoleOutputNotifyServer());
                         client.connect();
                         break;
+                    case "exit":
                     case "disconnect":
                         client.disconnect();
                         break;

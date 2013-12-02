@@ -3,6 +3,7 @@ package org.jchat;
 import java.io.EOFException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
@@ -19,7 +20,6 @@ class jServerConnection extends Observable implements Runnable {
     jServerConnection(String nickName) {
         this.active = false;
         this.nickName = nickName;
-        this.initConnection();
     }
 
     void initConnection() {
@@ -27,6 +27,9 @@ class jServerConnection extends Observable implements Runnable {
             this.socket = jConfig.initSocketFromConfig(jConfig.loadConfig(this.getClass(), "properties.config"));
             this.outputStreamSocket = new ObjectOutputStream(socket.getOutputStream());
             this.inputStreamSocket = new ObjectInputStream(socket.getInputStream());
+            new Thread(this).start();
+        } catch (ConnectException connectException) {
+            notifyServer(new jMessage(jMsgFlags.ERROR, "Unavailable connect to server"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -37,7 +40,7 @@ class jServerConnection extends Observable implements Runnable {
 
         try {
             this.active = true;
-            sendMsg(new jMessage(jConstants.jMsgFlag.CONNECT, this.nickName));
+            sendMsg(new jMessage(jMsgFlags.CONNECT, this.nickName));
             Object msg;
             while (this.active) {
                 msg = this.inputStreamSocket.readObject();
@@ -49,23 +52,24 @@ class jServerConnection extends Observable implements Runnable {
             e.printStackTrace();
         } finally {
             this.closeOpenedObjects();
-            this.notifyServer(new jMessage(jConstants.jMsgFlag.WARNING, "Server connection was loss"));
+            this.notifyServer(new jMessage(jMsgFlags.WARNING, "Server connection was loss"));
         }
     }
 
     private void checkTypeMessage(Object obj) {
         if (obj == null || !(obj instanceof jMessage)) {
-            this.notifyServer(new jMessage(jConstants.jMsgFlag.ERROR, "Unknown message"));
+            this.notifyServer(new jMessage(jMsgFlags.ERROR, "Unknown message"));
             return;
         }
         jMessage msg = (jMessage) obj;
-        this.active = (msg.getTypeMessage() != jConstants.jMsgFlag.DISCONNECT);
+        this.active = (msg.getTypeMessage() != jMsgFlags.DISCONNECT);
         this.notifyServer(msg);
     }
 
     void stopConnection() {
         try {
-            this.sendMsg(new jMessage(jConstants.jMsgFlag.DISCONNECT));
+            if (this.active)
+                this.sendMsg(new jMessage(jMsgFlags.DISCONNECT));
             this.closeOpenedObjects();
         } catch (Exception e) {
             e.printStackTrace();
@@ -117,15 +121,15 @@ class jServerConnection extends Observable implements Runnable {
         try {
             this.outputStreamSocket.writeObject(msg);
         } catch (Exception e) {
-            this.notifyServer(new jMessage(jConstants.jMsgFlag.ERROR, "Unavailable to send"));
+            this.notifyServer(new jMessage(jMsgFlags.ERROR, "Unavailable to send"));
         }
     }
 
     void sendMsg(String message) {
-        this.sendMsg(new jMessage(jConstants.jMsgFlag.MESSAGE, message));
+        this.sendMsg(new jMessage(jMsgFlags.MESSAGE, message));
     }
 
-    void notifyServer(Object object) {
+    private void notifyServer(Object object) {
         setChanged();
         notifyObservers(object);
     }

@@ -40,7 +40,7 @@ class jListenerConnections extends Observable implements Runnable {
         }
     }
 
-    void notifyServer(Object object) {
+    private void notifyServer(Object object) {
         setChanged();
         notifyObservers(object);
     }
