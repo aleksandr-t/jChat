@@ -13,7 +13,7 @@ class jListenerConnections extends Observable implements Runnable {
 
     @Override
     public void run() {
-        try (ServerSocket serverSocket = jConfig.initServerSocketFromConfig(jConfig.loadConfig(this.getClass(), "properties.config"))) {
+        try (ServerSocket serverSocket = jConfig.initServerSocketFromConfig("properties.config")) {
             this.serverSocket = serverSocket;
             notifyServer("Waiting for connections...");
             while (true) {
@@ -22,11 +22,11 @@ class jListenerConnections extends Observable implements Runnable {
                 notifyServer(clientConnection);
             }
         } catch (SocketException se) {
-
+            notifyServer("Waiting for connection was reset.");
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            notifyServer("Server was stopped...");
+            notifyServer("Server was stopped.");
         }
     }
 

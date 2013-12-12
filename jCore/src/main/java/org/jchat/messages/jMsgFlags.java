@@ -1,6 +1,6 @@
-package org.jchat;
+package org.jchat.messages;
 
-public enum jMsgFlags {
+enum jMsgFlags {
     CONNECT,
     DISCONNECT,
     MESSAGE,

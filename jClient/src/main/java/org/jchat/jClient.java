@@ -1,44 +1,52 @@
 package org.jchat;
 
+import org.jchat.messages.jMessage;
 
 import java.util.Observable;
 import java.util.Observer;
 
-public class jClient extends Observable implements Observer {
-
+class jClient extends Observable implements Observer {
 
     private jServerConnection serverConnection;
     private String nickName;
 
-    public jClient(String nickName) {
-        if (nickName == null)
+    jClient(String nickName) {
+        if (!this.isValidNickName(nickName))
             throw new IllegalArgumentException();
         this.nickName = nickName;
-        this.serverConnection = new jServerConnection(this.nickName);
+        this.serverConnection = new jServerConnection();
         this.serverConnection.addObserver(this);
     }
 
-    public String getNickName() {
+    private boolean isValidNickName(String nickName) {
+        return !(nickName == null || nickName.isEmpty());
+    }
+
+    String getNickName() {
         return this.nickName;
     }
 
-    public boolean changeNickName(String nickName) {
-        if (nickName == null || this.serverConnection.isActive())
+    boolean changeNickName(String nickName) {
+        if (!this.isValidNickName(nickName) || this.isConnected())
             return false;
         this.nickName = nickName;
         return true;
     }
 
-    public void connect() {
-        this.serverConnection.initConnection();
+    void connect() {
+        this.serverConnection.initConnection(this.nickName);
     }
 
-    public void disconnect() {
+    void disconnect() {
         this.serverConnection.stopConnection();
     }
 
-    public void sendMessageToAll(String message) throws Exception {
-        this.serverConnection.sendMsg(message);
+    boolean isConnected() {
+        return this.serverConnection.isActive();
+    }
+
+    void sendMessageToAll(String message) {
+        this.serverConnection.sendMsg(new jMessage(message));
     }
 
     @Override

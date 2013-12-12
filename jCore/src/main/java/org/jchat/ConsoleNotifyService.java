@@ -3,10 +3,10 @@ package org.jchat;
 import java.util.Observable;
 import java.util.Observer;
 
-class ConsoleOutputNotifyServer implements Observer {
+class ConsoleNotifyService implements Observer {
 
     @Override
     public void update(Observable o, Object arg) {
-        System.out.println(((jMessage) arg).getMessage());
+        System.out.println(arg);
     }
 }

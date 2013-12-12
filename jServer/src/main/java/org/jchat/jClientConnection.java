@@ -1,5 +1,10 @@
 package org.jchat;
 
+import org.jchat.messages.jMessage;
+import org.jchat.messages.jMessageConnect;
+import org.jchat.messages.jMessageDisconnect;
+import org.jchat.messages.jMsgControl;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -29,7 +34,7 @@ class jClientConnection extends Observable implements Runnable {
             this.inputStreamSocket = new ObjectInputStream(this.socket.getInputStream());
             this.outputStreamSocket = new ObjectOutputStream(this.socket.getOutputStream());
             Object rawMessage = this.inputStreamSocket.readObject();
-            if (this.isConnectMessage(rawMessage))
+            if (jMsgControl.isMessageConnect(rawMessage))
                 this.nickName = ((jMessage) rawMessage).getMessage();
         } catch (Exception e) {
             e.printStackTrace();
@@ -40,50 +45,43 @@ class jClientConnection extends Observable implements Runnable {
     public void run() {
 
         this.active = true;
-        this.sendMsg(new jMessage(jMsgFlags.CONNECT, String.format("Welcome to jChat, %s!", this.nickName)));
-        Object msg;
-        try {
-            while (this.active) {
-                msg = this.inputStreamSocket.readObject();
-                this.checkingTypeMessage(msg);
-            }
-        } catch (SocketException | EOFException se) {
+        this.sendMsg(new jMessageConnect(String.format("Welcome to jChat, %s!", this.nickName)));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            this.closeOpenedObjects();
-            notifyServer(new jMessage(jMsgFlags.DISCONNECT));
+        while (this.active) {
+            this.active = this.canReadFromSocket();
         }
+
+        this.closeOpenedObjects();
+        this.notifyServer(new jMessageDisconnect());
+
     }
 
     void sendMsg(jMessage msg) {
         try {
             this.outputStreamSocket.writeObject(msg);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private boolean isMessage(Object message) {
-        return (message instanceof jMessage);
-    }
+    private boolean canReadFromSocket() {
+        boolean canRead = false;
+        try {
+            Object msg = this.inputStreamSocket.readObject();
+            if (jMsgControl.isMessage(msg))
+                notifyServer(msg);
+            canRead = !jMsgControl.isMessageDisconnect(msg);
+        } catch (SocketException | EOFException se) {
 
-    private boolean isConnectMessage(Object connectMessage) {
-        return (this.isMessage(connectMessage) && ((jMessage) connectMessage).getTypeMessage() == jMsgFlags.CONNECT);
-    }
-
-    private void checkingTypeMessage(Object message) {
-        if (!this.isMessage(message))
-            return;
-        jMessage msg = (jMessage) message;
-        this.active = (msg.getTypeMessage() != jMsgFlags.DISCONNECT);
-        notifyServer(msg);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return canRead;
     }
 
     void stopConnection(String reason) {
         try {
-            this.sendMsg(new jMessage(jMsgFlags.DISCONNECT, reason));
+            this.sendMsg(new jMessageDisconnect(reason));
         } catch (Exception e) {
             e.printStackTrace();
         }

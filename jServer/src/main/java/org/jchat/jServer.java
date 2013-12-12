@@ -1,5 +1,9 @@
 package org.jchat;
 
+import org.jchat.messages.jMessage;
+import org.jchat.messages.jMessageInfo;
+import org.jchat.messages.jMsgControl;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Observable;
@@ -9,76 +13,24 @@ class jServer extends Observable implements Observer {
 
     private List<jClientConnection> clientConnections;
     private jListenerConnections listenerConnections;
+    private Thread threadListenerConnections;
 
     jServer() {
         this.clientConnections = new LinkedList<>();
+        this.listenerConnections = new jListenerConnections();
+        this.listenerConnections.addObserver(this);
+        this.threadListenerConnections = new Thread(this.listenerConnections);
     }
 
     void startServer() {
-        this.listenerConnections = new jListenerConnections();
-        new Thread(this.listenerConnections).start();
-        this.listenerConnections.addObserver(this);
+        if (!this.threadListenerConnections.isAlive())
+            this.threadListenerConnections.start();
     }
 
-    void stopServer() throws Exception {
-        if (this.listenerConnections == null)
-            return;
+    void stopServer() {
+        if (this.threadListenerConnections.isAlive())
+            this.listenerConnections.stopListener();
         this.disconnectAll();
-        this.listenerConnections.stopListener();
-    }
-
-    synchronized private void addClientConnection(jClientConnection clientConnection) {
-        this.clientConnections.add(clientConnection);
-    }
-
-    void disconnectClient(int idClient) throws Exception {
-        this.disconnectClientConnection(this.clientConnections.get(idClient - 1));
-    }
-
-    private void disconnectClientConnection(jClientConnection clientConnection) throws Exception {
-        clientConnection.stopConnection("Disconnect by admin");
-    }
-
-    synchronized void disconnectAll() throws Exception {
-        int size = this.clientConnections.size();
-        if (size == 0)
-            return;
-        jClientConnection clientConnection;
-        for (int i = 0; i < size; i++) {
-            clientConnection = this.clientConnections.get(0);
-            this.disconnectClientConnection(clientConnection);
-            this.clientConnections.remove(clientConnection);
-        }
-    }
-
-    void sendMessageToClient(int idClient, jMessage msg) throws Exception {
-        this.clientConnections.get(idClient - 1).sendMsg(msg);
-    }
-
-    public void sendMessageToAll(final jMessage msg) {
-        for (jClientConnection clientConnection : this.clientConnections)
-            clientConnection.sendMsg(msg);
-    }
-
-    private void sendMessageToClientConnection(jClientConnection clientConnection, jMessage msg) {
-        clientConnection.sendMsg(msg);
-    }
-
-    synchronized void sendMessageToAll(String From, String message) {
-        for (jClientConnection c : this.clientConnections) {
-            if (!From.equals(c.getNickName()))
-                this.sendMessageToClientConnection(c, new jMessage(jMsgFlags.MESSAGE, String.format("%s >> %s", From, message)));
-        }
-    }
-
-    synchronized private boolean existsNickName(String nickName) {
-        if (nickName == null || nickName.isEmpty())
-            return true;
-        for (jClientConnection c : this.clientConnections) {
-            if (nickName.equals(c.getNickName()))
-                return true;
-        }
-        return false;
     }
 
     synchronized int getTotalConnections() {
@@ -94,35 +46,50 @@ class jServer extends Observable implements Observer {
         return lst;
     }
 
-    private void initClientConnection(jClientConnection clientConnection) {
-        clientConnection.initConnection();
-        String nickName = clientConnection.getNickName();
-        if (this.existsNickName(nickName)) {
-            clientConnection.stopConnection("Incorrect nickname or already exists");
-        } else {
-            this.sendMessageToAll(new jMessage(jMsgFlags.INFO, String.format("%s is online.", nickName)));
-            this.addClientConnection(clientConnection);
-            clientConnection.addObserver(this);
-            new Thread(clientConnection).start();
+    synchronized void disconnectClient(int idClient) {
+        this.disconnectClientConnection(this.clientConnections.get(idClient - 1));
+    }
+
+    synchronized void disconnectAll() {
+        for (jClientConnection clientConnection : this.clientConnections)
+            this.disconnectClientConnection(clientConnection);
+        this.clientConnections.clear();
+    }
+
+    private void disconnectClientConnection(jClientConnection clientConnection) {
+        clientConnection.stopConnection("Disconnect by admin");
+    }
+
+    synchronized void sendMessageToClient(int idClient, String message) {
+        this.clientConnections.get(idClient - 1).sendMsg(new jMessageInfo(message));
+    }
+
+    synchronized void sendMessageToAll(String message) {
+        for (jClientConnection clientConnection : this.clientConnections)
+            clientConnection.sendMsg(new jMessageInfo(message));
+    }
+
+    synchronized void sendMessageToAll(String From, String message) {
+        for (jClientConnection c : this.clientConnections) {
+            if (!From.equals(c.getNickName()))
+                this.sendMessageToClientConnection(c, new jMessage(String.format("%s >> %s", From, message)));
         }
     }
 
+    private void sendMessageToClientConnection(jClientConnection clientConnection, jMessage msg) {
+        clientConnection.sendMsg(msg);
+    }
+
     @Override
-    public void update(Observable o, Object arg) {
-        jMessage msg;
+    public synchronized void update(Observable o, Object arg) {
         if (o instanceof jClientConnection) {
             jClientConnection clientConnection = (jClientConnection) o;
-            msg = (jMessage) arg;
-            jMsgFlags jMsgFlags = msg.getTypeMessage();
-            switch (jMsgFlags) {
-                case DISCONNECT:
-                    this.clientConnections.remove(clientConnection);
-                    this.sendMessageToAll(new jMessage(jMsgFlags.INFO, String.format("%s is offline.", clientConnection.getNickName())));
-                    break;
-                case MESSAGE:
-                    this.sendMessageToAll(clientConnection.getNickName(), msg.getMessage());
-                    break;
-            }
+
+            if (jMsgControl.isMessageDisconnect(arg)) {
+                this.clientConnections.remove(clientConnection);
+                this.sendMessageToAll(String.format("%s is offline.", clientConnection.getNickName()));
+            } else
+                this.sendMessageToAll(clientConnection.getNickName(), arg.toString());
         } else {
             if (arg instanceof jClientConnection)
                 this.initClientConnection((jClientConnection) arg);
@@ -131,5 +98,30 @@ class jServer extends Observable implements Observer {
                 notifyObservers(arg);
             }
         }
+    }
+
+    private void initClientConnection(jClientConnection clientConnection) {
+        clientConnection.initConnection();
+        if (this.existsNickName(clientConnection.getNickName()))
+            clientConnection.stopConnection("Incorrect nickname or already exists");
+        else {
+            this.addNewClientConnection(clientConnection);
+        }
+    }
+
+    private synchronized boolean existsNickName(String nickName) {
+        if (nickName == null || nickName.isEmpty())
+            return true;
+        for (jClientConnection c : this.clientConnections)
+            if (nickName.equals(c.getNickName()))
+                return true;
+        return false;
+    }
+
+    private synchronized void addNewClientConnection(jClientConnection clientConnection) {
+        this.sendMessageToAll(String.format("%s is online.", clientConnection.getNickName()));
+        clientConnection.addObserver(this);
+        this.clientConnections.add(clientConnection);
+        new Thread(clientConnection).start();
     }
 }

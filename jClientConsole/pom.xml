@@ -11,5 +11,12 @@
 
     <artifactId>jClientConsole</artifactId>
 
+    <dependencies>
+        <dependency>
+            <artifactId>jClient</artifactId>
+            <groupId>org.jchat</groupId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
 
 </project>

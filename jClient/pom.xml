@@ -11,5 +11,11 @@
 
     <artifactId>jClient</artifactId>
 
-
+    <dependencies>
+        <dependency>
+            <artifactId>jCore</artifactId>
+            <groupId>org.jchat</groupId>
+            <version>1.0</version>
+        </dependency>
+    </dependencies>
 </project>
