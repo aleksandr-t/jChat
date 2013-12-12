@@ -6,6 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Observable;
 
 
@@ -64,6 +65,8 @@ class jServerConnection extends Observable implements Runnable {
             if (jMsgControl.isMessage(msg))
                 notifyServer(msg);
             canRead = !jMsgControl.isMessageDisconnect(msg);
+        } catch (SocketException se) {
+            this.notifyServer(new jMessageInfo("Disconnecting..."));
         } catch (Exception e) {
             e.printStackTrace();
         }
