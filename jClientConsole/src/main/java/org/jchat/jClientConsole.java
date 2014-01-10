@@ -6,8 +6,8 @@ import java.io.InputStreamReader;
 
 public class jClientConsole {
 
-    static jClient client;
-    static ConsoleNotifyService notifyService;
+    private static jClient client;
+    private static ConsoleNotifyService notifyService;
 
     public static void main(String[] args) {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {

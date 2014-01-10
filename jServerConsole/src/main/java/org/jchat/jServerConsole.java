@@ -5,8 +5,8 @@ import java.io.InputStreamReader;
 
 public class jServerConsole {
 
-    static jServer server;
-    static ConsoleNotifyService notifyService;
+    private static jServer server;
+    private static ConsoleNotifyService notifyService;
 
     public static void main(String[] args) {
 

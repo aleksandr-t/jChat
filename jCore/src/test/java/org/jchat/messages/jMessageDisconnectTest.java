@@ -7,9 +7,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class jMessageDisconnectTest {
-    static jMessage message;
-    static jMessage messageNull;
-    static jMessage messageEmpty;
+    private static jMessage message;
+    private static jMessage messageNull;
+    private static jMessage messageEmpty;
 
     @BeforeClass
     public static void testInitMessages() {

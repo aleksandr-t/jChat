@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
+import java.util.logging.Logger;
 
 class jClientConnection extends Observable implements Runnable {
 
@@ -20,9 +21,11 @@ class jClientConnection extends Observable implements Runnable {
     private ObjectOutputStream outputStreamSocket;
     private ObjectInputStream inputStreamSocket;
     private String nickName;
+    private Logger logger;
 
-    jClientConnection(Socket socket) {
+    jClientConnection(Socket socket, Logger logger) {
         this.socket = socket;
+        this.logger = logger;
     }
 
     String getNickName() {
@@ -60,7 +63,7 @@ class jClientConnection extends Observable implements Runnable {
         try {
             this.outputStreamSocket.writeObject(msg);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 
@@ -72,19 +75,15 @@ class jClientConnection extends Observable implements Runnable {
                 notifyServer(msg);
             canRead = !jMsgControl.isMessageDisconnect(msg);
         } catch (SocketException | EOFException se) {
-
+            logger.warning("Warning: connection was reset.");
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
         return canRead;
     }
 
     void stopConnection(String reason) {
-        try {
-            this.sendMsg(new jMessageDisconnect(reason));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.sendMsg(new jMessageDisconnect(reason));
         this.closeOpenedObjects();
     }
 
@@ -101,7 +100,7 @@ class jClientConnection extends Observable implements Runnable {
         try {
             this.outputStreamSocket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 
@@ -111,7 +110,7 @@ class jClientConnection extends Observable implements Runnable {
         try {
             this.inputStreamSocket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 
@@ -121,7 +120,7 @@ class jClientConnection extends Observable implements Runnable {
         try {
             this.socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.severe(String.format("Error: %s::%s() - %s", jClientConnection.class.getName(), "closeSocket", e.toString()));
         }
     }
 

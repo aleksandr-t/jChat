@@ -7,8 +7,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class jMessageErrorTest {
-    static jMessage message;
-    static jMessage messageNull;
+    private static jMessage message;
+    private static jMessage messageNull;
 
     @BeforeClass
     public static void testInitMessages() {

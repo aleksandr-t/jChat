@@ -47,7 +47,8 @@ class jServer extends Observable implements Observer {
     }
 
     synchronized void disconnectClient(int idClient) {
-        this.disconnectClientConnection(this.clientConnections.get(idClient - 1));
+        if (idClient <= this.clientConnections.size() && idClient > 0)
+            this.disconnectClientConnection(this.clientConnections.get(idClient - 1));
     }
 
     synchronized void disconnectAll() {
@@ -61,7 +62,8 @@ class jServer extends Observable implements Observer {
     }
 
     synchronized void sendMessageToClient(int idClient, String message) {
-        this.clientConnections.get(idClient - 1).sendMsg(new jMessageInfo(message));
+        if (idClient <= this.clientConnections.size() && idClient > 0)
+            this.clientConnections.get(idClient - 1).sendMsg(new jMessageInfo(message));
     }
 
     synchronized void sendMessageToAll(String message) {

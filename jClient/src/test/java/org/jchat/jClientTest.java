@@ -7,7 +7,7 @@ import static org.junit.Assert.*;
 
 public class jClientTest {
 
-    static jClient client;
+    private static jClient client;
 
     @BeforeClass
     public static void testCreateClient() {

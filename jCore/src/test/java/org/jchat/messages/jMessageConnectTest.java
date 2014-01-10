@@ -8,8 +8,8 @@ import static org.junit.Assert.assertTrue;
 
 public class jMessageConnectTest {
 
-    static jMessage message;
-    static jMessage messageNull;
+    private static jMessage message;
+    private static jMessage messageNull;
 
     @BeforeClass
     public static void testInitMessages() {

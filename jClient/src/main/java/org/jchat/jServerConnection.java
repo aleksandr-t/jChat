@@ -8,6 +8,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Observable;
+import java.util.logging.Logger;
 
 
 class jServerConnection extends Observable implements Runnable {
@@ -17,12 +18,14 @@ class jServerConnection extends Observable implements Runnable {
     private ObjectOutputStream outputStreamSocket;
     private ObjectInputStream inputStreamSocket;
     private String nickName;
+    private Logger logger;
 
     void initConnection(String nickName) {
         if (this.active)
             return;
         this.nickName = nickName;
         try {
+            logger = jLogger.initFileLogger(jClient.class.getName());
             this.socket = jConfig.initSocketFromConfig("properties.config");
             this.outputStreamSocket = new ObjectOutputStream(socket.getOutputStream());
             this.inputStreamSocket = new ObjectInputStream(socket.getInputStream());
@@ -32,8 +35,11 @@ class jServerConnection extends Observable implements Runnable {
             this.closeOpenedObjects();
             notifyServer(new jMessageError("Unavailable connect to server"));
         } catch (Exception e) {
+            if (logger != null)
+                logger.severe(e.toString());
+            else
+                e.printStackTrace();
             this.closeOpenedObjects();
-            e.printStackTrace();
         }
     }
 
@@ -68,14 +74,12 @@ class jServerConnection extends Observable implements Runnable {
         } catch (SocketException se) {
             this.notifyServer(new jMessageInfo("Disconnecting..."));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
         return canRead;
     }
 
     void stopConnection() {
-        if (this.active)
-            this.sendMsg(new jMessageDisconnect());
         this.closeOpenedObjects();
     }
 
@@ -91,7 +95,7 @@ class jServerConnection extends Observable implements Runnable {
         try {
             this.inputStreamSocket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 
@@ -101,7 +105,7 @@ class jServerConnection extends Observable implements Runnable {
         try {
             this.outputStreamSocket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 
@@ -111,7 +115,7 @@ class jServerConnection extends Observable implements Runnable {
         try {
             this.socket.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.severe(e.toString());
         }
     }
 

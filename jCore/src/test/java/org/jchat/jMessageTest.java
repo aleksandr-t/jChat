@@ -8,8 +8,8 @@ import static org.junit.Assert.assertEquals;
 
 public class jMessageTest {
 
-    static jMessage message;
-    static jMessage messageNull;
+    private static jMessage message;
+    private static jMessage messageNull;
 
     @BeforeClass
     public static void testInitMessages() {
